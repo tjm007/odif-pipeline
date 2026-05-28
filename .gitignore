@@ -34,3 +34,12 @@ Thumbs.db
 # Build Artifacts
 dist/
 build/
+
+# Generated data
+data/raw/*
+data/processed/*
+
+
+# Keep folder structure
+!data/raw/.gitkeep
+!data/processed/.gitkeep

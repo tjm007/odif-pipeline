@@ -1,19 +1,18 @@
-import pandas as pd
+from src.data.sales_data import (
+    generate_sales_data,
+    save_sales_data,
+    load_sales_data
+)
 
-def main():
-    data = {
-        "product": ["Notebook","Sticker", "Mug"],
-        "sales": [25, 40, 15]
-    }
 
-    df = pd.DataFrame(data)
+def main() -> None:
+    sales_df = generate_sales_data()
 
-    print("\nSales Data:")
-    print(df)
+    save_sales_data(sales_df)
 
-    print("\nTotal Sales:")
-    print(df["sales"].sum())
+    loaded_sales_df = load_sales_data()
 
+    print(loaded_sales_df)
 
 if __name__ == "__main__":
     main()
