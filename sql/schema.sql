@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS sales;
+
+CREATE TABLE IF NOT EXISTS sales (
+    id INTEGER PRIMARY KEY,
+    product_name TEXT NOT NULL,
+    quantity INTEGER NOT NULL
+);
