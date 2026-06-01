@@ -15,3 +15,4 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed"
 SAMPLE_DATA_DIR = DATA_DIR / "sample"
 
 SALES_DATA_FILE = RAW_DATA_DIR / "sales_data.csv"
+PROCESSED_SALES_DATA_FILE = PROCESSED_DATA_DIR / "sales_data_processed.csv"
