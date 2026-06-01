@@ -12,7 +12,7 @@ def validate_sales_data(sales_df: pd.DataFrame) -> list[str]:
 
     for column in REQUIRED_RAW_SALES_COLUMNS:
         if column not in sales_df.columns:
-            errors.append(f"Missing required column: (column)")
+            errors.append(f"Missing required column: {column}")
     
     if errors:
         return errors
