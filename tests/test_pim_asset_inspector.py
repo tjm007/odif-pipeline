@@ -3,7 +3,7 @@ from pathlib import Path
 from src.pim_asset_inspector.config_loader import load_rules_from_json
 from src.pim_asset_inspector.file_inventory import inventory_files
 from src.pim_asset_inspector.filename_validation import validate_filename
-
+from src.pim_asset_inspector.asset_inspector import inspect_assets
 
 def test_load_rules_from_json_returns_rules_dictionary() -> None:
     rules_path = Path("config/pim_asset_rules.json")
@@ -93,3 +93,41 @@ def test_validate_filename_fails_when_sequence_format_is_invalid() -> None:
 
     assert result["is_valid"] is False
     assert "Invalid sequence format: A1" in result["issues"]
+
+def test_inspect_assets_returns_results_for_all_files(tmp_path: Path) -> None:
+    rules = {
+        "filename": {
+            "separator": "_",
+            "required_segments": ["sku", "view", "sequence"],
+            "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
+            "sequence_pattern": "^[0-9]{2}$",
+        }
+    }
+
+    asset_folder = tmp_path / "assets"
+    asset_folder.mkdir()
+
+    valid_file = asset_folder / "ABC123_FRONT_01.jpg"
+    invalid_file = asset_folder / "ABC123_POTATO_01.jpg"
+
+    valid_file.write_text("fake image content")
+    invalid_file.write_text("fake image content")
+
+    results = inspect_assets(asset_folder, rules)
+
+    assert len(results) == 2
+
+    valid_results = [
+        result
+        for result in results
+        if result["is_valid"] is True
+    ]
+
+    invalid_results = [
+        result
+        for result in results
+        if result["is_valid"] is False
+    ]
+
+    assert len(valid_results) == 1
+    assert len(invalid_results) == 1
