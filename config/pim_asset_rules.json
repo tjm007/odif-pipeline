@@ -1,0 +1,14 @@
+{
+  "asset_type": "image",
+  "allowed_extensions": [".jpg", ".jpeg", ".png", ".webp"],
+  "max_file_size_mb": 5,
+  "min_width": 1200,
+  "min_height": 1200,
+  "filename": {
+    "separator": "_",
+    "required_segments": ["sku", "view", "sequence"],
+    "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
+    "sequence_pattern": "^[0-9]{2}$"
+  },
+  "future_rule_sources": ["csv", "excel", "database"]
+}
