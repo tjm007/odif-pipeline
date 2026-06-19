@@ -7,6 +7,7 @@ def validate_filename(
         rules: dict[str, Any]
 ) -> dict[str, Any]:
     """Validate a file name against configured PIM naming rules."""
+    
     filename = file_path.name
     stem = file_path.stem
 
@@ -19,24 +20,32 @@ def validate_filename(
     segments = stem.split(separator)
     issues: list[str] = []
 
-    result: dict[str, Any] = {
+    details: dict[str, Any] = {
         "filename": filename,
         "sku": None,
         "view": None,
         "sequence": None,
-        "is_valid": False,
-        "issues": issues,
     }
 
     if len(segments) != len(required_segments):
-        issues.append(f"Expected {len(required_segments)} filename segments, found {len(segments)}")
-        return result
+        issues.append(
+            f"Expected {len(required_segments)} filename segments, found {len(segments)}"
+        )
+    
+        validation_result = {
+            "validator": "filename",
+            "is_valid": False,
+            "issues": issues,
+            "details": details,
+        }
+
+        return validation_result
 
     sku, view, sequence = segments
         
-    result["sku"] = sku
-    result["view"] = view
-    result["sequence"] = sequence
+    details["sku"] = sku
+    details["view"] = view
+    details["sequence"] = sequence
     
     if view not in allowed_views:
         issues.append(f"Invalid view value: {view}")
@@ -44,7 +53,12 @@ def validate_filename(
     if re.fullmatch(sequence_pattern, sequence) is None:
         issues.append(f"Invalid sequence format: {sequence}")
 
-    result["is_valid"] = len(issues) == 0
+    validation_result = {
+        "validator": "filename",
+        "is_valid": len(issues) == 0,
+        "issues": issues,
+        "details": details,
+    }
 
-    return result
+    return validation_result
     

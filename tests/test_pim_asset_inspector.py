@@ -1,9 +1,12 @@
 from pathlib import Path
+from PIL import Image
 
 from src.pim_asset_inspector.config_loader import load_rules_from_json
 from src.pim_asset_inspector.file_inventory import inventory_files
 from src.pim_asset_inspector.filename_validation import validate_filename
 from src.pim_asset_inspector.asset_inspector import inspect_assets
+from src.pim_asset_inspector.image_validation import extract_image_properties
+from src.pim_asset_inspector.image_validation import validate_image_properties
 
 def test_load_rules_from_json_returns_rules_dictionary() -> None:
     rules_path = Path("config/pim_asset_rules.json")
@@ -40,10 +43,10 @@ def test_validate_filename_returns_parsed_valid_result() -> None:
 
     result = validate_filename(Path("ABC123_FRONT_01.jpg"), rules)
 
-    assert result["filename"] == "ABC123_FRONT_01.jpg"
-    assert result["sku"] == "ABC123"
-    assert result["view"] == "FRONT"
-    assert result["sequence"] == "01"
+    assert result["details"]["filename"] == "ABC123_FRONT_01.jpg"
+    assert result["details"]["sku"] == "ABC123"
+    assert result["details"]["view"] == "FRONT"
+    assert result["details"]["sequence"] == "01"
     assert result["is_valid"] is True
     assert result["issues"] == []
 
@@ -60,7 +63,7 @@ def test_validate_filename_fails_when_segment_count_is_wrong() -> None:
     result = validate_filename(Path("ABC123_FRONT.jpg"), rules)
 
     assert result["is_valid"] is False
-    assert result["sku"] is None
+    assert result["details"]["sku"] is None
     assert "Expected 3 filename segments, found 2" in result["issues"]
 
 
@@ -131,3 +134,152 @@ def test_inspect_assets_returns_results_for_all_files(tmp_path: Path) -> None:
 
     assert len(valid_results) == 1
     assert len(invalid_results) == 1
+
+def test_extract_image_properties_returns_image_metadata(tmp_path: Path) -> None:
+    image_path = tmp_path / "ABC123_FRONT_01.jpg"
+
+    test_image = Image.new(
+        "RGB",
+        (1200, 1200),
+    )
+
+    test_image.save(image_path)
+
+    image_properties = extract_image_properties(image_path)
+
+    assert image_properties["filename"] == "ABC123_FRONT_01.jpg"
+    assert image_properties["extension"] == ".jpg"
+    assert image_properties["detected_format"] == "JPEG"
+    assert image_properties["width"] == 1200
+    assert image_properties["height"] == 1200
+    assert image_properties["file_size_mb"] > 0
+
+def test_validation_image_properties_returns_valid_result() -> None:
+    image_properties = {
+        "filename": "ABC123_FRONT_01.jpg",
+        "extension": ".jpg",
+        "detected_format": "JPEG",
+        "width": 1200,
+        "height": 1200,
+        "file_size_mb": 1.0,
+    }
+
+    rules = {
+        "allowed_extensions": [".jpg", ".jpeg", ".png", ".webp"],
+        "max_file_size_mb": 5,
+        "min_width": 1200,
+        "min_height": 1200,
+    }
+
+    validation_result = validate_image_properties(
+        image_properties,
+        rules,
+    )
+
+    assert validation_result["validator"] == "image"
+    assert validation_result["is_valid"] is True
+    assert validation_result["issues"] == []
+    assert validation_result["details"]["width"] == 1200
+
+def test_validate_image_properties_fails_for_disallowed_extension() -> None:
+    image_properties = {
+        "filename": "ABC123_FRONT_01.gif",
+        "extension": ".gif",
+        "detected_format": "GIF",
+        "width": 1200,
+        "height": 1200,
+        "file_size_mb": 1.0,
+    }
+
+    rules = {
+        "allowed_extensions": [".jpg", ".jpeg", ".png", ".webp"],
+        "max_file_size_mb": 5,
+        "min_width": 1200,
+        "min_height": 1200,
+    }
+
+    validation_result = validate_image_properties(
+        image_properties,
+        rules,
+    )
+
+    assert validation_result["is_valid"] is False
+    assert "Extension not allowed: .gif" in validation_result["issues"]
+
+def test_validate_image_properties_fails_for_small_width() -> None:
+    image_properties = {
+        "filename": "ABC123_FRONT_01.jpg",
+        "extension": ".jpg",
+        "detected_format": "JPEG",
+        "width": 800,
+        "height": 1200,
+        "file_size_mb": 1.0,
+    }
+
+    rules = {
+        "allowed_extensions": [".jpg"],
+        "max_file_size_mb": 5,
+        "min_width": 1200,
+        "min_height": 1200,
+    }
+
+    validation_result = validate_image_properties(
+        image_properties,
+        rules,
+    )
+
+    assert validation_result["is_valid"] is False
+    assert "Width below minimum: 800" in validation_result["issues"]
+
+def test_validate_image_properties_fails_for_small_height() -> None:
+    image_properties = {
+        "filename": "ABC123_FRONT_01.jpg",
+        "extension": ".jpg",
+        "detected_format": "JPEG",
+        "width": 1200,
+        "height": 800,
+        "file_size_mb": 1.0,
+    }
+
+    rules = {
+        "allowed_extensions": [".jpg"],
+        "max_file_size_mb": 5,
+        "min_width": 1200,
+        "min_height": 1200,
+    }
+
+    validation_result = validate_image_properties(
+        image_properties,
+        rules,
+    )
+
+    assert validation_result["is_valid"] is False
+    assert "Height below minimum: 800" in validation_result["issues"]
+
+def test_validate_image_properties_fails_for_large_file_size() -> None:
+    image_properties = {
+        "filename": "ABC123_FRONT_01.jpg",
+        "extension": ".jpg",
+        "detected_format": "JPEG",
+        "width": 1200,
+        "height": 1200,
+        "file_size_mb": 10.0,
+    }
+
+    rules = {
+        "allowed_extensions": [".jpg"],
+        "max_file_size_mb": 5,
+        "min_width": 1200,
+        "min_height": 1200,
+    }
+
+    validation_result = validate_image_properties(
+        image_properties,
+        rules,
+    )
+
+    assert validation_result["is_valid"] is False
+    assert any(
+        "File size exceeds maximum" in issue
+        for issue in validation_result["issues"]
+    )
