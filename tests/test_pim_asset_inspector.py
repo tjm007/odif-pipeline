@@ -104,7 +104,11 @@ def test_inspect_assets_returns_results_for_all_files(tmp_path: Path) -> None:
             "required_segments": ["sku", "view", "sequence"],
             "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
             "sequence_pattern": "^[0-9]{2}$",
-        }
+        },
+        "allowed_extensions": [".jpg", ".jpeg", ".png", ".webp"],
+        "max_file_size_mb": 5,
+        "min_width": 1200,
+        "min_height": 1200,
     }
 
     asset_folder = tmp_path / "assets"
@@ -113,8 +117,18 @@ def test_inspect_assets_returns_results_for_all_files(tmp_path: Path) -> None:
     valid_file = asset_folder / "ABC123_FRONT_01.jpg"
     invalid_file = asset_folder / "ABC123_POTATO_01.jpg"
 
-    valid_file.write_text("fake image content")
-    invalid_file.write_text("fake image content")
+    valid_image = Image.new(
+        "RGB",
+        (1200, 1200),
+    )
+
+    invalid_image = Image.new(
+        "RGB",
+        (1200, 1200),
+    )
+
+    valid_image.save(valid_file)
+    invalid_image.save(invalid_file)
 
     results = inspect_assets(asset_folder, rules)
 
@@ -282,4 +296,53 @@ def test_validate_image_properties_fails_for_large_file_size() -> None:
     assert any(
         "File size exceeds maximum" in issue
         for issue in validation_result["issues"]
+    )
+
+def test_inspect_assets_returns_combined_validator_results(
+    tmp_path: Path,
+) -> None:
+    rules = {
+        "filename": {
+            "separator": "_",
+            "required_segments": ["sku", "view", "sequence"],
+            "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
+            "sequence_pattern": "^[0-9]{2}$",
+        },
+        "allowed_extensions": [".jpg", ".jpeg", ".png", ".webp"],
+        "max_file_size_mb": 5,
+        "min_width": 1200,
+        "min_height": 1200,
+    }
+
+    asset_folder = tmp_path / "assets"
+    asset_folder.mkdir()
+
+    image_path = asset_folder / "ABC123_FRONT_01.jpg"
+
+    image = Image.new(
+        "RGB",
+        (1200, 1200),
+    )
+
+    image.save(image_path)
+
+    results = inspect_assets(
+        asset_folder,
+        rules,
+    )
+
+    result = results[0]
+
+    assert "validators" in result
+    assert "filename" in result["validators"]
+    assert "image" in result["validators"]
+
+    assert (
+        result["validators"]["filename"]["validator"]
+        == "filename"
+    )
+
+    assert (
+        result["validators"]["image"]["validator"]
+        == "image"
     )
