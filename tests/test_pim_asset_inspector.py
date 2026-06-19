@@ -7,6 +7,10 @@ from src.pim_asset_inspector.filename_validation import validate_filename
 from src.pim_asset_inspector.asset_inspector import inspect_assets
 from src.pim_asset_inspector.image_validation import extract_image_properties
 from src.pim_asset_inspector.image_validation import validate_image_properties
+from src.pim_asset_inspector.report_writer import (
+    build_report_rows,
+    write_csv_report,
+)
 
 def test_load_rules_from_json_returns_rules_dictionary() -> None:
     rules_path = Path("config/pim_asset_rules.json")
@@ -346,3 +350,91 @@ def test_inspect_assets_returns_combined_validator_results(
         result["validators"]["image"]["validator"]
         == "image"
     )
+
+def test_build_report_rows_flattens_inspection_results() -> None:
+    inspection_results = [
+        {
+            "file_path": "data/sample/pim_assets/ABC123_FRONT_01.jpg",
+            "file_name": "ABC123_FRONT_01.jpg",
+            "validators": {
+                "filename": {
+                    "validator": "filename",
+                    "is_valid": True,
+                    "issues": [],
+                    "details": {
+                        "filename": "ABC123_FRONT_01.jpg",
+                        "sku": "ABC123",
+                        "view": "FRONT",
+                        "sequence": "01",
+                    },
+                },
+                "image": {
+                    "validator": "image",
+                    "is_valid": True,
+                    "issues": [],
+                    "details": {
+                        "filename": "ABC123_FRONT_01.jpg",
+                        "extension": ".jpg",
+                        "detected_format": "JPEG",
+                        "width": 1200,
+                        "height": 1200,
+                        "file_size_mb": 0.1,
+                    },
+                },
+            },
+            "is_valid": True,
+            "issues": [],
+        }
+    ]
+
+    report_rows = build_report_rows(inspection_results)
+
+    assert len(report_rows) == 1
+
+    report_row = report_rows[0]
+
+    assert report_row["file_name"] == "ABC123_FRONT_01.jpg"
+    assert report_row["overall_status"] == "PASS"
+    assert report_row["filename_status"] == "PASS"
+    assert report_row["image_status"] == "PASS"
+    assert report_row["sku"] == "ABC123"
+    assert report_row["view"] == "FRONT"
+    assert report_row["sequence"] == "01"
+    assert report_row["detected_format"] == "JPEG"
+    assert report_row["width"] == 1200
+    assert report_row["height"] == 1200
+    assert report_row["issues"] == ""
+
+def test_write_csv_report_creates_report_file(tmp_path: Path) -> None:
+    report_rows = [
+        {
+            "file_name": "ABC123_FRONT_01.jpg",
+            "overall_status": "PASS",
+            "filename_status": "PASS",
+            "image_status": "PASS",
+            "sku": "ABC123",
+            "view": "FRONT",
+            "sequence": "01",
+            "detected_format": "JPEG",
+            "width": 1200,
+            "height": 1200,
+            "file_size_mb": 0.1,
+            "issues": "",
+        }
+    ]
+
+    output_path = tmp_path / "reports" / "pim_asset_inspection_report.csv"
+
+    write_csv_report(
+        report_rows,
+        output_path,
+    )
+
+    assert output_path.exists()
+
+    report_content = output_path.read_text(
+        encoding="utf-8",
+    )
+
+    assert "file_name" in report_content
+    assert "ABC123_FRONT_01.jpg" in report_content
