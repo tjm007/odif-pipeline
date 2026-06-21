@@ -44,6 +44,7 @@ def build_report_rows(
             "view": filename_details["view"],
             "sequence": filename_details["sequence"],
             "detected_format": image_details["detected_format"],
+            "color_mode": image_details["color_mode"],
             "width": image_details["width"],
             "height": image_details["height"],
             "file_size_mb": image_details["file_size_mb"],

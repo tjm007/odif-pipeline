@@ -333,6 +333,7 @@ def test_build_report_rows_flattens_inspection_results() -> None:
                         "filename": "ABC123_FRONT_01.jpg",
                         "extension": ".jpg",
                         "detected_format": "JPEG",
+                        "color_mode": "RGB",
                         "width": 1200,
                         "height": 1200,
                         "file_size_mb": 0.1,
@@ -358,6 +359,7 @@ def test_build_report_rows_flattens_inspection_results() -> None:
     assert report_row["view"] == "FRONT"
     assert report_row["sequence"] == "01"
     assert report_row["detected_format"] == "JPEG"
+    assert report_row["color_mode"] == "RGB"
     assert report_row["width"] == 1200
     assert report_row["height"] == 1200
     assert report_row["issues"] == ""
@@ -373,6 +375,7 @@ def test_write_csv_report_creates_report_file(tmp_path: Path) -> None:
             "view": "FRONT",
             "sequence": "01",
             "detected_format": "JPEG",
+            "color_mode": "RGB",
             "width": 1200,
             "height": 1200,
             "file_size_mb": 0.1,
