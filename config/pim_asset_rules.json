@@ -10,5 +10,6 @@
     "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
     "sequence_pattern": "^[0-9]{2}$"
   },
-  "future_rule_sources": ["csv", "excel", "database"]
+  "future_rule_sources": ["csv", "excel", "database"],
+  "allowed_color_modes": ["RGB"]
 }

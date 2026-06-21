@@ -35,17 +35,11 @@ def test_inventory_files_returns_files_from_asset_folder(tmp_path: Path) -> None
     assert files == [image_file]
 
 
-def test_validate_filename_returns_parsed_valid_result() -> None:
-    rules = {
-        "filename": {
-            "separator": "_",
-            "required_segments": ["sku", "view", "sequence"],
-            "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
-            "sequence_pattern": "^[0-9]{2}$",
-        }
-    }
+def test_validate_filename_returns_parsed_valid_result(
+        pim_image_rules: dict,
+) -> None:
 
-    result = validate_filename(Path("ABC123_FRONT_01.jpg"), rules)
+    result = validate_filename(Path("ABC123_FRONT_01.jpg"), pim_image_rules)
 
     assert result["details"]["filename"] == "ABC123_FRONT_01.jpg"
     assert result["details"]["sku"] == "ABC123"
@@ -54,66 +48,39 @@ def test_validate_filename_returns_parsed_valid_result() -> None:
     assert result["is_valid"] is True
     assert result["issues"] == []
 
-def test_validate_filename_fails_when_segment_count_is_wrong() -> None:
-    rules = {
-        "filename": {
-            "separator": "_",
-            "required_segments": ["sku", "view", "sequence"],
-            "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
-            "sequence_pattern": "^[0-9]{2}$",
-        }
-    }
+def test_validate_filename_fails_when_segment_count_is_wrong(
+        pim_image_rules: dict,
+) -> None:
 
-    result = validate_filename(Path("ABC123_FRONT.jpg"), rules)
+    result = validate_filename(Path("ABC123_FRONT.jpg"), pim_image_rules)
 
     assert result["is_valid"] is False
     assert result["details"]["sku"] is None
     assert "Expected 3 filename segments, found 2" in result["issues"]
 
 
-def test_validate_filename_fails_when_view_is_invalid() -> None:
-    rules = {
-        "filename": {
-            "separator": "_",
-            "required_segments": ["sku", "view", "sequence"],
-            "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
-            "sequence_pattern": "^[0-9]{2}$",
-        }
-    }
+def test_validate_filename_fails_when_view_is_invalid(
+        pim_image_rules: dict,
+) -> None:
 
-    result = validate_filename(Path("ABC123_POTATO_01.jpg"), rules)
+    result = validate_filename(Path("ABC123_POTATO_01.jpg"), pim_image_rules)
 
     assert result["is_valid"] is False
     assert "Invalid view value: POTATO" in result["issues"]
 
-def test_validate_filename_fails_when_sequence_format_is_invalid() -> None:
-    rules = {
-        "filename": {
-            "separator": "_",
-            "required_segments": ["sku", "view", "sequence"],
-            "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
-            "sequence_pattern": "^[0-9]{2}$",
-        }
-    }
+def test_validate_filename_fails_when_sequence_format_is_invalid(
+        pim_image_rules: dict,
+) -> None:
 
-    result = validate_filename(Path("ABC123_FRONT_A1.jpg"), rules)
+    result = validate_filename(Path("ABC123_FRONT_A1.jpg"), pim_image_rules)
 
     assert result["is_valid"] is False
     assert "Invalid sequence format: A1" in result["issues"]
 
-def test_inspect_assets_returns_results_for_all_files(tmp_path: Path) -> None:
-    rules = {
-        "filename": {
-            "separator": "_",
-            "required_segments": ["sku", "view", "sequence"],
-            "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
-            "sequence_pattern": "^[0-9]{2}$",
-        },
-        "allowed_extensions": [".jpg", ".jpeg", ".png", ".webp"],
-        "max_file_size_mb": 5,
-        "min_width": 1200,
-        "min_height": 1200,
-    }
+def test_inspect_assets_returns_results_for_all_files(
+        tmp_path: Path,
+        pim_image_rules: dict,
+) -> None:
 
     asset_folder = tmp_path / "assets"
     asset_folder.mkdir()
@@ -134,7 +101,7 @@ def test_inspect_assets_returns_results_for_all_files(tmp_path: Path) -> None:
     valid_image.save(valid_file)
     invalid_image.save(invalid_file)
 
-    results = inspect_assets(asset_folder, rules)
+    results = inspect_assets(asset_folder, pim_image_rules)
 
     assert len(results) == 2
 
@@ -172,7 +139,9 @@ def test_extract_image_properties_returns_image_metadata(tmp_path: Path) -> None
     assert image_properties["height"] == 1200
     assert image_properties["file_size_mb"] > 0
 
-def test_validation_image_properties_returns_valid_result() -> None:
+def test_validation_image_properties_returns_valid_result(
+        pim_image_rules: dict,
+) -> None:
     image_properties = {
         "filename": "ABC123_FRONT_01.jpg",
         "extension": ".jpg",
@@ -180,18 +149,12 @@ def test_validation_image_properties_returns_valid_result() -> None:
         "width": 1200,
         "height": 1200,
         "file_size_mb": 1.0,
-    }
-
-    rules = {
-        "allowed_extensions": [".jpg", ".jpeg", ".png", ".webp"],
-        "max_file_size_mb": 5,
-        "min_width": 1200,
-        "min_height": 1200,
+        "color_mode": "RGB",
     }
 
     validation_result = validate_image_properties(
         image_properties,
-        rules,
+        pim_image_rules,
     )
 
     assert validation_result["validator"] == "image"
@@ -199,7 +162,9 @@ def test_validation_image_properties_returns_valid_result() -> None:
     assert validation_result["issues"] == []
     assert validation_result["details"]["width"] == 1200
 
-def test_validate_image_properties_fails_for_disallowed_extension() -> None:
+def test_validate_image_properties_fails_for_disallowed_extension(
+        pim_image_rules: dict,
+) -> None:
     image_properties = {
         "filename": "ABC123_FRONT_01.gif",
         "extension": ".gif",
@@ -207,24 +172,20 @@ def test_validate_image_properties_fails_for_disallowed_extension() -> None:
         "width": 1200,
         "height": 1200,
         "file_size_mb": 1.0,
-    }
-
-    rules = {
-        "allowed_extensions": [".jpg", ".jpeg", ".png", ".webp"],
-        "max_file_size_mb": 5,
-        "min_width": 1200,
-        "min_height": 1200,
+        "color_mode": "RGB",
     }
 
     validation_result = validate_image_properties(
         image_properties,
-        rules,
+        pim_image_rules,
     )
 
     assert validation_result["is_valid"] is False
     assert "Extension not allowed: .gif" in validation_result["issues"]
 
-def test_validate_image_properties_fails_for_small_width() -> None:
+def test_validate_image_properties_fails_for_small_width(
+        pim_image_rules: dict,
+) -> None:
     image_properties = {
         "filename": "ABC123_FRONT_01.jpg",
         "extension": ".jpg",
@@ -232,24 +193,20 @@ def test_validate_image_properties_fails_for_small_width() -> None:
         "width": 800,
         "height": 1200,
         "file_size_mb": 1.0,
-    }
-
-    rules = {
-        "allowed_extensions": [".jpg"],
-        "max_file_size_mb": 5,
-        "min_width": 1200,
-        "min_height": 1200,
+        "color_mode": "RGB",
     }
 
     validation_result = validate_image_properties(
         image_properties,
-        rules,
+        pim_image_rules,
     )
 
     assert validation_result["is_valid"] is False
     assert "Width below minimum: 800" in validation_result["issues"]
 
-def test_validate_image_properties_fails_for_small_height() -> None:
+def test_validate_image_properties_fails_for_small_height(
+        pim_image_rules: dict,
+) -> None:
     image_properties = {
         "filename": "ABC123_FRONT_01.jpg",
         "extension": ".jpg",
@@ -257,24 +214,20 @@ def test_validate_image_properties_fails_for_small_height() -> None:
         "width": 1200,
         "height": 800,
         "file_size_mb": 1.0,
-    }
-
-    rules = {
-        "allowed_extensions": [".jpg"],
-        "max_file_size_mb": 5,
-        "min_width": 1200,
-        "min_height": 1200,
+        "color_mode": "RGB",
     }
 
     validation_result = validate_image_properties(
         image_properties,
-        rules,
+        pim_image_rules,
     )
 
     assert validation_result["is_valid"] is False
     assert "Height below minimum: 800" in validation_result["issues"]
 
-def test_validate_image_properties_fails_for_large_file_size() -> None:
+def test_validate_image_properties_fails_for_large_file_size(
+        pim_image_rules: dict,
+) -> None:
     image_properties = {
         "filename": "ABC123_FRONT_01.jpg",
         "extension": ".jpg",
@@ -282,18 +235,12 @@ def test_validate_image_properties_fails_for_large_file_size() -> None:
         "width": 1200,
         "height": 1200,
         "file_size_mb": 10.0,
-    }
-
-    rules = {
-        "allowed_extensions": [".jpg"],
-        "max_file_size_mb": 5,
-        "min_width": 1200,
-        "min_height": 1200,
+        "color_mode": "RGB",
     }
 
     validation_result = validate_image_properties(
         image_properties,
-        rules,
+        pim_image_rules,
     )
 
     assert validation_result["is_valid"] is False
@@ -302,21 +249,31 @@ def test_validate_image_properties_fails_for_large_file_size() -> None:
         for issue in validation_result["issues"]
     )
 
+def test_validate_image_properties_fails_for_disallowed_color_mode(
+        pim_image_rules: dict,
+) -> None:
+    image_properties = {
+        "filename": "ABC123_FRONT_01.jpg",
+        "extension": ".jpg",
+        "detected_format": "JPEG",
+        "color_mode": "CMYK",
+        "width": 1200,
+        "height": 1200,
+        "file_size_mb": 1.0,
+    }
+
+    validation_result = validate_image_properties(
+        image_properties,
+        pim_image_rules,
+    )
+
+    assert validation_result["is_valid"] is False
+    assert "Color mode not allowed: CMYK" in validation_result["issues"]
+
 def test_inspect_assets_returns_combined_validator_results(
     tmp_path: Path,
+    pim_image_rules: dict,
 ) -> None:
-    rules = {
-        "filename": {
-            "separator": "_",
-            "required_segments": ["sku", "view", "sequence"],
-            "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
-            "sequence_pattern": "^[0-9]{2}$",
-        },
-        "allowed_extensions": [".jpg", ".jpeg", ".png", ".webp"],
-        "max_file_size_mb": 5,
-        "min_width": 1200,
-        "min_height": 1200,
-    }
 
     asset_folder = tmp_path / "assets"
     asset_folder.mkdir()
@@ -332,7 +289,7 @@ def test_inspect_assets_returns_combined_validator_results(
 
     results = inspect_assets(
         asset_folder,
-        rules,
+        pim_image_rules,
     )
 
     result = results[0]

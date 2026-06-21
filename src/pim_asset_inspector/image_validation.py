@@ -15,6 +15,7 @@ def extract_image_properties(file_path: Path) -> dict[str, Any]:
             "width": image.width,
             "height": image.height,
             "file_size_mb": file_size_mb,
+            "color_mode": image.mode
         }
     
     return image_properties
@@ -31,6 +32,7 @@ def validate_image_properties(
     max_file_size_mb = rules["max_file_size_mb"]
     min_width = rules["min_width"]
     min_height = rules["min_height"]
+    allowed_color_modes = rules["allowed_color_modes"]
 
     if image_properties["extension"] not in allowed_extensions:
         issues.append(
@@ -51,6 +53,12 @@ def validate_image_properties(
         issues.append(
             f"Height below minimum: {image_properties['height']}"
         )
+    
+    if image_properties["color_mode"] not in allowed_color_modes:
+        issues.append(
+            f"Color mode not allowed: {image_properties['color_mode']}"
+        )
+
 
     validation_result = {
         "validator": "image",

@@ -28,3 +28,19 @@ def processed_sales_df() -> pd.DataFrame:
             "unit_price": [5.00, 2.00, 10.00, 1.50],
         }
     )
+
+@pytest.fixture
+def pim_image_rules() -> dict:
+    return {
+        "filename": {
+            "separator": "_",
+            "required_segments": ["sku", "view", "sequence"],
+            "allowed_views": ["FRONT", "BACK", "SIDE", "DETAIL"],
+            "sequence_pattern": "^[0-9]{2}$",
+        },
+        "allowed_extensions": [".jpg", ".jpeg", ".png", ".webp"],
+        "allowed_color_modes": ["RGB"],
+        "max_file_size_mb": 5,
+        "min_width": 1200,
+        "min_height": 1200,
+    }
