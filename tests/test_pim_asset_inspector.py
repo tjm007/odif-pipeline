@@ -613,3 +613,50 @@ def test_required_asset_validation_tracks_skipped_files_when_filename_parts_are_
     }
 
     assert validation_results == expected_batch_result
+
+def test_required_asset_validation_tracks_multiple_skipped_files(
+    required_asset_views,
+) -> None:
+    asset_results = [
+        build_asset_result_with_filename_parts("SKU123", "FRONT", "01"),
+        {
+            "file_path": "data/sample/assets/BAD_FILENAME_01.jpg",
+            "file_name": "BAD_FILENAME_01.jpg",
+            "validators": {
+                "filename": {
+                    "is_valid": False,
+                    "details": {},
+                }
+            },
+        },
+        {
+            "file_path": "data/sample/assets/BAD_FILENAME_02.jpg",
+            "file_name": "BAD_FILENAME_02.jpg",
+            "validators": {
+                "filename": {
+                    "is_valid": False,
+                    "details": {},
+                }
+            },
+        },
+    ]
+
+    validation_results = validate_required_assets(
+        asset_results,
+        required_asset_views,
+    )
+
+    expected_skipped_files = [
+        {
+            "file_path": "data/sample/assets/BAD_FILENAME_01.jpg",
+            "file_name": "BAD_FILENAME_01.jpg",
+            "reason": "Filename parsing unavailable",
+        },
+        {
+            "file_path": "data/sample/assets/BAD_FILENAME_02.jpg",
+            "file_name": "BAD_FILENAME_02.jpg",
+            "reason": "Filename parsing unavailable",
+        },
+    ]
+
+    assert validation_results["skipped_files"] == expected_skipped_files
