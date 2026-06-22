@@ -28,6 +28,14 @@ def validate_required_assets(
         parsed_values = filename_details.get("parsed_values")
 
         if parsed_values is None:
+            if "sku" in filename_details and "view" in filename_details:
+                parsed_values = {
+                    "sku": filename_details["sku"],
+                    "view": filename_details["view"],
+                    "sequence": filename_details.get("sequence"),
+                }
+
+        if parsed_values is None:
             skipped_file = {
                 "file_path": asset_result["file_path"],
                 "file_name": asset_result["file_name"],
@@ -51,7 +59,16 @@ def validate_required_assets(
 
         for sku_asset in sku_assets:
             filename_validator = sku_asset["validators"]["filename"]
-            parsed_values = filename_validator["details"]["parsed_values"]
+            filename_details = filename_validator["details"]
+            parsed_values = filename_details.get("parsed_values")
+
+            if parsed_values is None:
+                parsed_values = {
+                    "sku": filename_details["sku"],
+                    "view": filename_details["view"],
+                    "sequence": filename_details.get("sequence"),
+                }
+
             view = parsed_values["view"]
 
             found_views.append(view)
