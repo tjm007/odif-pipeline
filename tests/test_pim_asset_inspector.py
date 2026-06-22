@@ -10,6 +10,7 @@ from src.pim_asset_inspector.image_validation import extract_image_properties
 from src.pim_asset_inspector.image_validation import validate_image_properties
 from src.pim_asset_inspector.report_writer import (
     build_report_rows,
+    build_required_asset_report_rows,
     write_csv_report,
 )
 from src.pim_asset_inspector.required_asset_validation import validate_required_assets
@@ -660,3 +661,44 @@ def test_required_asset_validation_tracks_multiple_skipped_files(
     ]
 
     assert validation_results["skipped_files"] == expected_skipped_files
+
+def test_build_required_asset_report_rows_returns_expected_row() -> None:
+    required_asset_batch_result = {
+        "validation_results": [
+            {
+                "validator": "required_assets",
+                "scope": "collection",
+                "collection_key": "SKU123",
+                "is_valid": False,
+                "issues": [
+                    "Missing required view: SIDE",
+                ],
+                "details": {
+                    "required_views": ["FRONT", "BACK", "SIDE"],
+                    "found_views": ["BACK", "FRONT"],
+                    "missing_views": ["SIDE"],
+                    "file_count": 2,
+                },
+            }
+        ],
+        "skipped_files": [],
+    }
+
+    report_rows = build_required_asset_report_rows(
+        required_asset_batch_result,
+    )
+
+    expected_rows = [
+        {
+            "sku": "SKU123",
+            "validator": "required_assets",
+            "status": "FAIL",
+            "required_views": "FRONT; BACK; SIDE",
+            "found_views": "BACK; FRONT",
+            "missing_views": "SIDE",
+            "file_count": 2,
+            "issues": "Missing required view: SIDE",
+        }
+    ]
+
+    assert report_rows == expected_rows

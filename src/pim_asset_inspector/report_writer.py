@@ -55,6 +55,34 @@ def build_report_rows(
 
     return report_rows
 
+def build_required_asset_report_rows(
+    required_asset_batch_result: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Build flattened report rows from required asset validation results."""
+
+    report_rows = []
+
+    validation_results = required_asset_batch_result["validation_results"]
+
+    for validation_result in validation_results:
+        details = validation_result["details"]
+        issues = "; ".join(validation_result["issues"])
+
+        report_row = {
+            "sku": validation_result["collection_key"],
+            "validator": validation_result["validator"],
+            "status": format_status(validation_result["is_valid"]),
+            "required_views": "; ".join(details["required_views"]),
+            "found_views": "; ".join(details["found_views"]),
+            "missing_views": "; ".join(details["missing_views"]),
+            "file_count": details["file_count"],
+            "issues": issues,
+        }
+
+        report_rows.append(report_row)
+
+    return report_rows
+
 def write_csv_report(
     report_rows: list[dict[str, Any]],
     output_path: Path,
