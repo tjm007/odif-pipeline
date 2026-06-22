@@ -5,7 +5,10 @@ from PIL import Image
 def extract_image_properties(file_path: Path) -> dict[str, Any]:
     """Extract image file properties without applying validation rules."""
 
-    file_size_mb = file_path.stat().st_size / (1024 * 1024)
+    file_size_mb = round(
+        file_path.stat().st_size / (1024 * 1024),
+        2,
+    )
 
     with Image.open(file_path) as image:
         image_properties = {
