@@ -1,0 +1,3 @@
+sku,validator,status,required_views,found_views,missing_views,file_count,issues
+SKU123,required_assets,PASS,"FRONT; BACK; SIDE","BACK; FRONT; SIDE",,3,
+SKU456,required_assets,FAIL,"FRONT; BACK; SIDE","BACK; FRONT","SIDE",2,"Missing required view: SIDE"

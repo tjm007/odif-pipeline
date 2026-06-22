@@ -51,16 +51,16 @@ Missing required view: SIDE
 
 ### Current Validation Capabilities
 
-* File inventory
-* Filename convention validation
-* SKU, view, and sequence parsing
-* Image format detection
-* Image resolution validation
-* File size validation
-* Color mode validation
-* Required product view validation
-* Batch-level skipped file tracking
-* CSV reporting
+- File inventory
+- Filename convention validation
+- SKU, view, and sequence parsing
+- Image format detection
+- Image resolution validation
+- File size validation
+- Color mode validation
+- Required product view validation
+- Batch-level skipped file tracking
+- CSV reporting
 
 ## Why This Matters
 
@@ -68,33 +68,65 @@ Product Information Management (PIM) teams frequently manage thousands of produc
 
 The PIM Asset Inspector helps identify asset quality and completeness issues before publication by validating:
 
-* Asset naming standards
-* Image specifications
-* Product view requirements
-* Catalog completeness
+- Asset naming standards
+- Image specifications
+- Product view requirements
+- Catalog completeness
 
 This allows product data teams to identify issues earlier, improve data governance, and support more consistent product launches.
 
+## Technology Stack
+
+- Python 3.12
+- Pytest
+- Pillow
+- CSV Reporting
+- JSON Configuration
+- Rule-Based Validation Engine
+
+## Quality Assurance
+
+The project includes automated unit tests covering:
+
+- Filename validation
+- Image validation
+- Color mode validation
+- Required asset validation
+- Batch-level validation behavior
+- Report generation
+
+Current test status: 25 passing tests.
+
 ## Current Status
 
-Version: 0.1
+Version: 0.2
 
 Implemented:
-- Project structure
-- JSON rules file
+
+- File inventory
 - JSON rules loader
+- Filename validation
+- SKU, view, and sequence parsing
+- Image format detection
+- Image resolution validation
+- File size validation
+- Color mode validation
+- Required asset validation
+- CSV report generation
+- Automated test coverage
 
 In Progress:
-- File inventory
-- Filename validation
+
+- End-to-end reporting workflow
+- Documentation improvements
 
 Planned:
-- Image format detection
-- Image dimension checks
-- CSV inspection report
+
 - Markdown summary report
 - CSV-to-JSON rule conversion
-- Multi-asset validation for images, documents, videos, and other file types
+- Document asset validation
+- Video asset validation
+- Multi-profile rule sets
 
 ## Inputs
 
