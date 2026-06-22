@@ -5,9 +5,14 @@ from PIL import Image
 from src.pim_asset_inspector.config_loader import load_rules_from_json
 from src.pim_asset_inspector.file_inventory import inventory_files
 from src.pim_asset_inspector.filename_validation import validate_filename
-from src.pim_asset_inspector.asset_inspector import inspect_assets
-from src.pim_asset_inspector.image_validation import extract_image_properties
-from src.pim_asset_inspector.image_validation import validate_image_properties
+from src.pim_asset_inspector.asset_inspector import (
+    inspect_assets,
+    write_required_asset_report,
+)
+from src.pim_asset_inspector.image_validation import (
+    extract_image_properties,
+    validate_image_properties,
+)
 from src.pim_asset_inspector.report_writer import (
     build_report_rows,
     build_required_asset_report_rows,
@@ -702,3 +707,30 @@ def test_build_required_asset_report_rows_returns_expected_row() -> None:
     ]
 
     assert report_rows == expected_rows
+
+def test_write_required_asset_report_writes_csv_file(
+    tmp_path,
+    required_asset_views,
+) -> None:
+    inspection_results = [
+        build_asset_result_with_filename_parts("SKU123", "FRONT", "01"),
+        build_asset_result_with_filename_parts("SKU123", "BACK", "01"),
+        build_asset_result_with_filename_parts("SKU123", "SIDE", "01"),
+        build_asset_result_with_filename_parts("SKU456", "FRONT", "01"),
+        build_asset_result_with_filename_parts("SKU456", "BACK", "01"),
+    ]
+    output_path = tmp_path / "required_asset_report.csv"
+
+    write_required_asset_report(
+        inspection_results,
+        required_asset_views,
+        output_path,
+    )
+
+    report_content = output_path.read_text(
+        encoding="utf-8",
+    )
+
+    assert "SKU123,required_assets,PASS" in report_content
+    assert "SKU456,required_assets,FAIL" in report_content
+    assert "Missing required view: SIDE" in report_content
