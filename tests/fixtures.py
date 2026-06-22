@@ -2,6 +2,9 @@ import pandas as pd
 import pytest
 
 from pathlib import Path
+from typing import Any
+
+
 
 @pytest.fixture
 def valid_sales_df() -> pd.DataFrame:
@@ -44,3 +47,36 @@ def pim_image_rules() -> dict:
         "min_width": 1200,
         "min_height": 1200,
     }
+
+@pytest.fixture
+def required_asset_views() -> list[str]:
+    required_views = ["FRONT", "BACK", "SIDE"]
+
+    return required_views
+
+def build_asset_result_with_filename_parts(
+    sku: str,
+    view: str,
+    sequence: str,
+) -> dict[str, Any]:
+    file_name = f"{sku}_{view}_{sequence}.jpg"
+    file_path = f"data/sample/assets/{file_name}"
+
+    asset_result = {
+        "file_path": file_path,
+        "file_name": file_name,
+        "validators": {
+            "filename": {
+                "is_valid": True,
+                "details": {
+                    "parsed_values": {
+                        "sku": sku,
+                        "view": view,
+                        "sequence": sequence,
+                    }
+                },
+            }
+        },
+    }
+
+    return asset_result

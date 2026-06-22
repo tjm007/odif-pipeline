@@ -1,6 +1,7 @@
 from pathlib import Path
 from PIL import Image
 
+
 from src.pim_asset_inspector.config_loader import load_rules_from_json
 from src.pim_asset_inspector.file_inventory import inventory_files
 from src.pim_asset_inspector.filename_validation import validate_filename
@@ -11,6 +12,11 @@ from src.pim_asset_inspector.report_writer import (
     build_report_rows,
     write_csv_report,
 )
+from src.pim_asset_inspector.required_asset_validation import validate_required_assets
+
+from tests.fixtures import build_asset_result_with_filename_parts
+
+
 
 def test_load_rules_from_json_returns_rules_dictionary() -> None:
     rules_path = Path("config/pim_asset_rules.json")
@@ -398,3 +404,212 @@ def test_write_csv_report_creates_report_file(tmp_path: Path) -> None:
 
     assert "file_name" in report_content
     assert "ABC123_FRONT_01.jpg" in report_content
+
+def test_required_asset_validation_returns_empty_list_for_no_assets() -> None:
+    asset_results = []
+    required_views = ["FRONT", "BACK", "SIDE"]
+
+    validation_results = validate_required_assets(
+        asset_results,
+        required_views,
+    )
+
+    expected_batch_result = {
+        "validation_results": [],
+        "skipped_files": [],
+    }
+
+    assert validation_results == expected_batch_result
+
+def test_required_asset_validation_returns_valid_result_when_all_required_views_exist(
+        required_asset_views,
+) -> None:
+    asset_results = [
+        build_asset_result_with_filename_parts("SKU123", "FRONT", "01"),
+        build_asset_result_with_filename_parts("SKU123", "BACK", "01"),
+        build_asset_result_with_filename_parts("SKU123", "SIDE", "01"),
+    ]
+    
+    required_views = ["FRONT", "BACK", "SIDE"]
+
+    validation_results = validate_required_assets(
+        asset_results,
+        required_views,
+    )
+
+    expected_result = {
+        "validator": "required_assets",
+        "scope": "collection",
+        "collection_key": "SKU123",
+        "is_valid": True,
+        "issues": [],
+        "details": {
+            "required_views": required_asset_views,
+            "found_views": ["BACK","FRONT", "SIDE"],
+            "missing_views": [],
+            "file_count": 3,
+        },
+    }
+
+    expected_batch_result = {
+        "validation_results": [expected_result],
+        "skipped_files": [],
+    }
+
+    assert validation_results == expected_batch_result
+
+def test_required_asset_validation_returns_invalid_result_when_required_view_is_missing(
+        required_asset_views,
+) -> None:
+    asset_results = [
+        build_asset_result_with_filename_parts("SKU123", "FRONT", "01"),
+        build_asset_result_with_filename_parts("SKU123", "BACK", "01"),
+    ]
+
+    required_views = required_asset_views
+
+    validation_results = validate_required_assets(
+        asset_results,
+        required_views,
+    )
+
+    expected_result = {
+        "validator": "required_assets",
+        "scope": "collection",
+        "collection_key": "SKU123",
+        "is_valid": False,
+        "issues": ["Missing required view: SIDE"],
+        "details": {
+            "required_views": ["FRONT", "BACK", "SIDE"],
+            "found_views": ["BACK", "FRONT"],
+            "missing_views": ["SIDE"],
+            "file_count": 2,
+
+        },
+    }
+
+    expected_batch_result = {
+    "validation_results": [expected_result],
+    "skipped_files": [],
+    }
+
+    assert validation_results == expected_batch_result
+
+def test_required_asset_validation_returns_result_for_each_sku(
+        required_asset_views,
+) -> None:
+    asset_results = [
+        build_asset_result_with_filename_parts("SKU123", "FRONT", "01"),
+        build_asset_result_with_filename_parts("SKU123", "BACK", "01"),
+        build_asset_result_with_filename_parts("SKU123", "SIDE", "01"),
+        build_asset_result_with_filename_parts("SKU456", "FRONT", "01"),
+        build_asset_result_with_filename_parts("SKU456", "BACK", "01"),        
+    ]
+
+    validation_results = validate_required_assets(
+        asset_results,
+        required_asset_views,
+    )
+
+    sku_results = validation_results["validation_results"]
+
+    first_result = sku_results[0]
+    second_result = sku_results[1]
+
+    assert first_result["collection_key"] == "SKU123"
+    assert first_result["is_valid"] is True
+    assert first_result["details"]["missing_views"] == []
+
+    assert second_result["collection_key"] == "SKU456"
+    assert second_result["is_valid"] is False
+    assert second_result["details"]["missing_views"] == ["SIDE"]
+
+    assert validation_results["skipped_files"] == []
+
+def test_required_asset_validation_returns_multiple_missing_view_issues(
+    required_asset_views,
+) -> None:
+    asset_results = [
+        build_asset_result_with_filename_parts("SKU123", "FRONT", "01"),
+    ]
+
+    validation_results = validate_required_assets(
+        asset_results,
+        required_asset_views,
+    )
+
+    expected_result = {
+        "validator": "required_assets",
+        "scope": "collection",
+        "collection_key": "SKU123",
+        "is_valid": False,
+        "issues": [
+            "Missing required view: BACK",
+            "Missing required view: SIDE",
+        ],
+        "details": {
+            "required_views": ["FRONT", "BACK", "SIDE"],
+            "found_views": ["FRONT"],
+            "missing_views": ["BACK", "SIDE"],
+            "file_count": 1,
+        },
+    }
+
+    expected_batch_result = {
+        "validation_results": [expected_result],
+        "skipped_files": [],
+    }
+
+    assert validation_results == expected_batch_result
+
+def test_required_asset_validation_tracks_skipped_files_when_filename_parts_are_missing(
+    required_asset_views,
+) -> None:
+    asset_results = [
+        build_asset_result_with_filename_parts("SKU123", "FRONT", "01"),
+        {
+            "file_path": "data/sample/assets/BAD_FILENAME.jpg",
+            "file_name": "BAD_FILENAME.jpg",
+            "validators": {
+                "filename": {
+                    "is_valid": False,
+                    "details": {},
+                }
+            },
+        },
+    ]
+
+    validation_results = validate_required_assets(
+        asset_results,
+        required_asset_views,
+    )
+
+    expected_result = {
+        "validator": "required_assets",
+        "scope": "collection",
+        "collection_key": "SKU123",
+        "is_valid": False,
+        "issues": [
+            "Missing required view: BACK",
+            "Missing required view: SIDE",
+        ],
+        "details": {
+            "required_views": ["FRONT", "BACK", "SIDE"],
+            "found_views": ["FRONT"],
+            "missing_views": ["BACK", "SIDE"],
+            "file_count": 1,
+        },
+    }
+
+    expected_batch_result = {
+        "validation_results": [expected_result],
+        "skipped_files": [
+            {
+                "file_path": "data/sample/assets/BAD_FILENAME.jpg",
+                "file_name": "BAD_FILENAME.jpg",
+                "reason": "Filename parsing unavailable",
+            }
+        ],
+    }
+
+    assert validation_results == expected_batch_result
