@@ -80,13 +80,13 @@ For a complete list of validations, see [Current Validation Capabilities](#curre
 
 The detailed asset report captures validation status and extracted metadata for each file.
 
-![File Validation Report](docs/images/pim_asset_file_report.png)
+![File Validation Report](../../docs/images/pim_asset_file_report.png)
 
 ### Required Asset Validation Report
 
 The required asset report evaluates product-level completeness and identifies missing product views.
 
-![Required Asset Report](docs/images/required_asset_report.png)
+![Required Asset Report](../../docs/images/required_asset_report.png)
 
 This separation allows teams to review both individual asset quality and overall product launch readiness.
 
