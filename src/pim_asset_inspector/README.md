@@ -2,9 +2,24 @@
 
 ## Purpose
 
-PIM Asset Inspector validates product asset files before they are loaded into a Product Information Management (PIM), Digital Asset Management (DAM), or ecommerce platform.
+PIM Asset Inspector validates product assets before they are published to Product Information Management (PIM), Digital Asset Management (DAM), and ecommerce platforms.
 
-The tool helps identify asset-readiness issues such as invalid filenames, unsupported file types, incorrect image dimensions, and files that do not match configurable upload rules.
+The tool identifies asset-readiness issues such as invalid filenames, unsupported file types, incorrect image specifications, missing required product views, and other violations of configurable upload rules.
+
+## Business Context
+
+This project was inspired by real-world Product Information Management (PIM) workflows involving product launches, catalog governance, digital asset management, and product metadata quality.
+
+In large catalogs, missing images, inconsistent naming conventions, incorrect file specifications, and incomplete product presentations can delay product launches and create customer-facing issues.
+
+The PIM Asset Inspector was designed to identify these issues before assets are published to downstream systems.
+
+## Quick Links
+
+- [Example Workflow](#example-workflow)
+- [Current Validation Capabilities](#current-validation-capabilities)
+- [Current Status](#current-status)
+- [Long-Term Vision](#long-term-vision)
 
 ## Example Workflow
 
@@ -37,10 +52,10 @@ CSV Report
 
 ### Required Asset Validation Results
 
-| SKU    | Status | Missing Views |
-| ------ | ------ | ------------- |
-| SKU123 | PASS   |               |
-| SKU456 | FAIL   | SIDE          |
+| SKU | Status | Missing Views |
+|------|------|------|
+| SKU123 | PASS | |
+| SKU456 | FAIL | SIDE |
 
 ### Example Issues
 
@@ -49,7 +64,33 @@ SKU456
 Missing required view: SIDE
 ```
 
-### Current Validation Capabilities
+### Try It
+
+Run the inspector against a sample asset folder:
+
+```bash
+python -m src.pim_asset_inspector
+```
+
+For a complete list of validations, see [Current Validation Capabilities](#current-validation-capabilities).
+
+## Sample Outputs
+
+### File-Level Validation Report
+
+The detailed asset report captures validation status and extracted metadata for each file.
+
+![File Validation Report](docs/images/pim_asset_file_report.png)
+
+### Required Asset Validation Report
+
+The required asset report evaluates product-level completeness and identifies missing product views.
+
+![Required Asset Report](docs/images/required_asset_report.png)
+
+This separation allows teams to review both individual asset quality and overall product launch readiness.
+
+## Current Validation Capabilities
 
 - File inventory
 - Filename convention validation
@@ -64,24 +105,25 @@ Missing required view: SIDE
 
 ## Why This Matters
 
-Product Information Management (PIM) teams frequently manage thousands of product assets across multiple sales channels. Missing images, inconsistent naming conventions, incorrect file specifications, and incomplete product presentations can delay product launches and create a poor customer experience.
+Product data teams frequently manage thousands of assets across multiple products, sales channels, and regions.
 
-The PIM Asset Inspector helps identify asset quality and completeness issues before publication by validating:
+The PIM Asset Inspector helps improve:
 
-- Asset naming standards
-- Image specifications
-- Product view requirements
-- Catalog completeness
+- Asset naming consistency
+- Image specification compliance
+- Product presentation completeness
+- Catalog governance
+- Product launch readiness
 
-This allows product data teams to identify issues earlier, improve data governance, and support more consistent product launches.
+By identifying issues earlier in the workflow, teams can reduce manual review effort and improve the quality of published product content.
 
 ## Technology Stack
 
 - Python 3.12
-- Pytest
 - Pillow
-- CSV Reporting
+- Pytest
 - JSON Configuration
+- CSV Reporting
 - Rule-Based Validation Engine
 
 ## Quality Assurance
@@ -101,7 +143,7 @@ Current test status: 25 passing tests.
 
 Version: 0.2
 
-Implemented:
+### Implemented
 
 - File inventory
 - JSON rules loader
@@ -115,12 +157,12 @@ Implemented:
 - CSV report generation
 - Automated test coverage
 
-In Progress:
+### In Progress
 
 - End-to-end reporting workflow
 - Documentation improvements
 
-Planned:
+### Planned
 
 - Markdown summary report
 - CSV-to-JSON rule conversion
@@ -135,16 +177,37 @@ Planned:
 
 ## Outputs
 
+Current:
+
 - CSV validation report
+- Required asset validation report
+
+Planned:
+
 - Markdown summary report
 
 ## Design Direction
 
-The validation engine should receive normalized rules as a Python dictionary.
+The validation engine receives normalized rules as a Python dictionary, allowing validation logic to remain independent of rule storage formats.
 
 Future rule sources may include:
 
-- CSV template
-- Excel workbook
-- Database table
-- PIM configuration export
+- CSV templates
+- Excel workbooks
+- Database tables
+- PIM configuration exports
+
+## Long-Term Vision
+
+The PIM Asset Inspector is being developed as a reusable validation framework rather than a single-purpose script.
+
+Future versions are intended to support:
+
+- Additional asset types
+- Multiple validation profiles
+- PIM-specific rule sets
+- DAM workflows
+- Product launch readiness audits
+- Catalog governance reporting
+
+The goal is to create a flexible validation platform that can be adapted to a variety of product content and digital asset management workflows.
